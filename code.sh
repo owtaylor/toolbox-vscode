@@ -275,6 +275,7 @@ if $toolbox_reset_configuration || [ ! -f $name_config ] ; then
     fi
 
     info "Creating configuration for $container_name"
+    mkdir -p "$(dirname $name_config)"
     cat > $name_config <<EOF
 {
   // Support requested in https://github.com/microsoft/vscode-remote-release/issues/4053.
@@ -313,7 +314,7 @@ settings="/root/.vscode-server/data/Machine/settings.json"
 if $toolbox_reset_configuration || [ ! -f $settings ] ; then
     info "Creating $settings"
 
-    mkdir -p $(dirname settings)
+    mkdir -p "$(dirname $settings)"
     cat > $settings <<EOF
 {
   "remote.containers.copyGitConfig": false,
