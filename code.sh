@@ -263,7 +263,8 @@ fi
 
 ### Make sure we have a visual-studio code configuration for this container
 
-name_config="$HOME/.var/app/com.visualstudio.code/config/Code/User/globalStorage/ms-vscode-remote.remote-containers/nameConfigs/$container_name.json"
+global_storage="$HOME/.var/app/com.visualstudio.code/config/Code/User/globalStorage"
+name_config="$global_storage/ms-vscode-remote.remote-containers/nameConfigs/$container_name.json"
 if $toolbox_reset_configuration || [ ! -f "$name_config" ] ; then
     # The reason for including $PATH in removeEnv is so that any path modifications
     # set up in ~/.bashrc / ~/.bash_profile are present in the environment where
@@ -340,12 +341,13 @@ fi
 # https://github.com/flathub/com.visualstudio.code/issues/210
 
 verbose "Checking for running Visual Studio Code Flatpak"
-existing=$($flatpak ps --columns=instance,application | sort -nr | while read -r instance application  ; do
-   if [ "$application" == "com.visualstudio.code" ] ; then
-       echo "$instance"
-       break
-   fi
-done)
+existing=$($flatpak ps --columns=instance,application | sort -nr | \
+    while read -r instance application  ; do
+        if [ "$application" == "com.visualstudio.code" ] ; then
+            echo "$instance"
+            break
+        fi
+    done)
 
 if [ "$existing" = "" ] ; then
     verbose "No running Visual Studio Code Flatpak, will use 'flatpak run'"
@@ -354,8 +356,14 @@ if [ "$existing" = "" ] ; then
              --remote attached-container+"$container_name_encoded" "${new_args[@]}"
 else
     verbose "Found running Visual Studio Code Flatpak, will use 'flatpak enter'"
+    # shellcheck disable=SC1004,SC2016
+    script='
+        cd $0
+        DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$UID/bus \
+        DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket \
+            exec "$@"
+    '
     $verbose && set -x
-    # shellcheck disable=SC2016
-    $flatpak enter "$existing" sh -c 'cd $0; DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$UID/bus DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket exec "$@"' "$PWD" code \
+    $flatpak enter "$existing" sh -c "$script" "$PWD" code \
              --remote attached-container+"$container_name_encoded" "${new_args[@]}"
 fi
