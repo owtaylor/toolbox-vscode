@@ -22,20 +22,20 @@ verbose=false
 if [ -t 2 ] ; then
     verbose() {
         if $verbose ; then
-            echo -e "\033[1m\033[34mtoolbox-vscode\033[0m: $@" 1>&2
+            echo -e "\033[1m\033[34mtoolbox-vscode\033[0m: $*" 1>&2
         fi
     }
     info() {
-        echo -e "\033[1m\033[34mtoolbox-vscode\033[0m: \033[1m$@\033[0m" 1>&2
+        echo -e "\033[1m\033[34mtoolbox-vscode\033[0m: \033[1m$*\033[0m" 1>&2
     }
 else
     verbose() {
         if $verbose ; then
-            echo -e "toolbox-vscode: $@" 1>&2
+            echo -e "toolbox-vscode: $*" 1>&2
         fi
     }
     info() {
-        echo -e "toolbox-vscode: $@" 1>&2
+        echo -e "toolbox-vscode: $*" 1>&2
     }
 fi
 
@@ -43,19 +43,19 @@ path_remove() {
     # remove the argument from $PATH
     local -a path newpath
 
-    SAVEIFS=$IFS
+    saveIFS=$IFS
     IFS=:
-    read -a path <<<$PATH
+    read -r -a path <<<"$PATH"
 
     newpath=()
     for p in "${path[@]}" ; do
         if [[ "$p" != "$1" ]] ; then
-            newpath+=($p)
+            newpath+=("$p")
         fi
     done
 
     PATH="${newpath[*]}"
-    IFS=$SAFEIFS
+    IFS=$saveIFS
 }
 
 ### Argument parsing
@@ -65,7 +65,7 @@ arg_index=0
 new_args=()
 
 next_arg() {
-    arg_index=$(($arg_index + 1))
+    arg_index=$((arg_index + 1))
 }
 
 copy_arg() {
@@ -192,8 +192,9 @@ if $add_new_window ; then
 fi
 
 flatpak="flatpak-spawn --host flatpak"
-container_name="$(. /run/.containerenv && echo $name)"
-container_name_encoded=$(echo -n $container_name | od -t x1 -A none -v | tr -d ' \n')
+# shellcheck disable=SC1091,SC2154
+container_name="$(. /run/.containerenv && echo "$name")"
+container_name_encoded=$(echo -n "$container_name" | od -t x1 -A none -v | tr -d ' \n')
 
 ### Make sure that we have the Visual Studio Code Flatpak installed
 
@@ -202,15 +203,14 @@ verbose "Checking if Visual Studio Code Flatpak is installed"
 if $flatpak list --app --columns=application | grep -q com.visualstudio.code ; then
     verbose "Visual Studio Code Flatpak is installed"
 else
-    read -p "Visual Studio Code Flatpak is not installed. Install? (y/N) " install
+    read -r -p "Visual Studio Code Flatpak is not installed. Install? (y/N) " install
     case "$install" in
         y|Y)
             if ! $flatpak remotes --columns=name | grep -q '^flathub$' ; then
                 echo "No flathub remote to install from, see https://flathub.org/" 1>&2
                 exit 1
             fi
-            $flatpak install flathub com.visualstudio.code
-            if [ "$?" != 0 ] ; then
+            if ! $flatpak install flathub com.visualstudio.code; then
                 echo "Installation failed" 1>&2
                 exit 1
             fi
@@ -224,31 +224,31 @@ fi
 ### Make sure that we have a podman wrapper configured
 
 podman_wrapper="$HOME/.local/bin/podman-host"
-if [ ! -f $podman_wrapper ] ; then
+if [ ! -f "$podman_wrapper" ] ; then
     info "Creating wrapper script: $podman_wrapper"
 
-    cat > $podman_wrapper <<'EOF'
+    cat > "$podman_wrapper" <<'EOF'
 #!/bin/bash
 exec flatpak-spawn --host podman "$@"
 EOF
 fi
-    chmod a+x $podman_wrapper
+    chmod a+x "$podman_wrapper"
 
 settings_json="$HOME/.var/app/com.visualstudio.code/config/Code/User/settings.json"
 
-if [ ! -f $settings_json ] ; then
+if [ ! -f "$settings_json" ] ; then
     info "Creating $settings_json"
 
-    mkdir -p $(dirname $settings_json)
-    cat > $settings_json <<EOF
+    mkdir -p "$(dirname "$settings_json")"
+    cat > "$settings_json" <<EOF
 {
   "remote.containers.dockerPath": "$podman_wrapper"
 }
 EOF
-elif ! grep -q remote.containers.dockerPath $settings_json ; then
+elif ! grep -q remote.containers.dockerPath "$settings_json" ; then
     # Assume that if remote.containers.dockerPath is set, its set to something that works
     info "Editing $settings_json to set remote.containers.dockerPath"
-    sed -i '1s@{@{\n  "remote.containers.dockerPath": "'$podman_wrapper'",@' $settings_json
+    sed -i '1s@{@{\n  "remote.containers.dockerPath": "'"$podman_wrapper"'",@' "$settings_json"
 fi
 
 ### Make sure that we have a writeable-by-user /root/.vscode-server directory
@@ -258,13 +258,13 @@ if [ ! -w /root/.vscode-server ] ; then
     info "Creating /root/.vscode-server"
     sudo chmod a+x /root
     sudo mkdir -p /root/.vscode-server
-    sudo chown $UID:$(id -g) /root/.vscode-server
+    sudo chown $UID:"$(id -g)" /root/.vscode-server
 fi
 
 ### Make sure we have a visual-studio code configuration for this container
 
 name_config="$HOME/.var/app/com.visualstudio.code/config/Code/User/globalStorage/ms-vscode-remote.remote-containers/nameConfigs/$container_name.json"
-if $toolbox_reset_configuration || [ ! -f $name_config ] ; then
+if $toolbox_reset_configuration || [ ! -f "$name_config" ] ; then
     # The reason for including $PATH in removeEnv is so that any path modifications
     # set up in ~/.bashrc / ~/.bash_profile are present in the environment where
     # vscode runs commands, not just in the interactive terminal. As a special case
@@ -275,8 +275,8 @@ if $toolbox_reset_configuration || [ ! -f $name_config ] ; then
     fi
 
     info "Creating configuration for $container_name"
-    mkdir -p "$(dirname $name_config)"
-    cat > $name_config <<EOF
+    mkdir -p "$(dirname "$name_config")"
+    cat > "$name_config" <<EOF
 {
   // Support requested in https://github.com/microsoft/vscode-remote-release/issues/4053.
   // "name": "Toolbox $container_name",
@@ -288,7 +288,7 @@ if $toolbox_reset_configuration || [ ! -f $name_config ] ; then
     // This is whatever it was when the config was created
     "DISPLAY": "$DISPLAY",
     "LANG": "\${localEnv:LANG}",
-    "PATH": "$path",
+    "PATH": "$PATH",
     "SHELL": "$SHELL",
     "SSH_AUTH_SOCK": "$SSH_AUTH_SOCK",
     "TERM": "\${localEnv:TERM}",
@@ -340,7 +340,7 @@ fi
 # https://github.com/flathub/com.visualstudio.code/issues/210
 
 verbose "Checking for running Visual Studio Code Flatpak"
-existing=$($flatpak ps --columns=instance,application | sort -nr | while read instance application  ; do
+existing=$($flatpak ps --columns=instance,application | sort -nr | while read -r instance application  ; do
    if [ "$application" == "com.visualstudio.code" ] ; then
        echo "$instance"
        break
@@ -351,10 +351,11 @@ if [ "$existing" = "" ] ; then
     verbose "No running Visual Studio Code Flatpak, will use 'flatpak run'"
     $verbose && set -x
     $flatpak run com.visualstudio.code \
-             --remote attached-container+$container_name_encoded "${new_args[@]}"
+             --remote attached-container+"$container_name_encoded" "${new_args[@]}"
 else
     verbose "Found running Visual Studio Code Flatpak, will use 'flatpak enter'"
     $verbose && set -x
-    $flatpak enter $existing sh -c 'cd $0; DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$UID/bus DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket exec "$@"' "$PWD" code \
-             --remote attached-container+$container_name_encoded "${new_args[@]}"
+    # shellcheck disable=SC2016
+    $flatpak enter "$existing" sh -c 'cd $0; DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$UID/bus DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket exec "$@"' "$PWD" code \
+             --remote attached-container+"$container_name_encoded" "${new_args[@]}"
 fi
