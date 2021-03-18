@@ -268,14 +268,60 @@ elif ! grep -q '"remote\.containers\.dockerPath": *"'"$wrapper_quoted"'"' "$sett
     fi
 fi
 
-### Make sure that we have a writeable-by-user /root/.vscode-server directory
+### See where VSCode is going to write machine specific config/data
 
-# this is where vscode stores per-container data/settings
-if [ ! -w /root/.vscode-server ] ; then
-    info "Creating /root/.vscode-server"
-    sudo chmod a+x /root
-    sudo mkdir -p /root/.vscode-server
-    sudo chown $UID:"$(id -g)" /root/.vscode-server
+# VSCode puts its .vscode-server directory in the value of $HOME
+# determined by 'podman inspect <container>'. For toolboxes, three
+# values have been seen, depending on podman version.
+#
+#  /root
+#  /
+#  User's homedir
+#
+# The first two are OK - we just need to make them world-writable,
+# but for the third, we need ot create a symlink to avoid having
+# different toolboxes step on each other.
+
+homevar="$(flatpak-spawn --host podman inspect "$container_name" \
+    --format='{{ range .Config.Env }}{{ . }}{{"\n"}}{{ end }}' \
+    | grep ^HOME=)"
+homevar="${homevar#HOME=}"
+
+case $homevar in
+    /)
+        vscode_server="/.vscode-server"
+        ;;
+    /root)
+        vscode_server="/root/.vscode-server"
+        ;;
+    "$HOME")
+        vscode_server="/.vscode-server"
+
+        if [ -e "$HOME/.vscode-server" ] && [ ! -L "$HOME/.vscode-server" ] ; then
+            echo "$HOME/.vscode-server is not a symlink - this is probably a left-over." 1>&2
+            echo "Please delete this directory and re-run." 1>&2
+            exit 1
+        fi
+        if [ "$(readlink "$HOME/.vscode-server")" != $vscode_server ] ; then
+            info "Creating symlink from $HOME/.vscode-server to /.vscode-server"
+            ln -T -sf $vscode_server "$HOME/.vscode-server"
+        fi
+    ;;
+    *)
+        echo "\$HOME in container config is: '$homevar' - don't know how to handle this." 1>&2
+        exit 1
+    ;;
+esac
+
+### Make sure that we have a writeable-by-user .vscode-server directory
+
+if [ ! -w $vscode_server ] ; then
+    info "Creating $vscode_server"
+    if [ $vscode_server = /root/.vscode-server ] ; then
+        sudo chmod a+x /root
+    fi
+    sudo mkdir -p $vscode_server
+    sudo chown $UID:"$(id -g)" $vscode_server
 fi
 
 ### Make sure we have a visual-studio code configuration for this container
@@ -324,7 +370,7 @@ fi
 # but if the user adds any settings for the container, the settings-key in the
 # attached-container configuration file is overwritten without merging.
 
-settings="/root/.vscode-server/data/Machine/settings.json"
+settings="$vscode_server/data/Machine/settings.json"
 if $toolbox_reset_configuration || [ ! -f $settings ] ; then
     info "Creating $settings"
 

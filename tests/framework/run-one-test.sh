@@ -33,11 +33,22 @@ ln -s /source/tests/framework/mock-flatpak-spawn.sh $bindir/flatpak-spawn
 
 ### Functions for tests
 
+fail() {
+    echo "$*" 1>&2
+    exit 1
+}
+
 assert_contents() {
     cat > /logs/expected
     if ! cmp -s /logs/expected "$1" ; then
         diff -u --label Expected --label "$1" /logs/expected "$1" 1>&2
         exit 1
+    fi
+}
+
+assert_grep() {
+    if ! grep -q "$1" "$2" ; then
+        fail "Failed to find '$1' in '$2'"
     fi
 }
 

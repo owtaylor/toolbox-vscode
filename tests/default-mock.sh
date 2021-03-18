@@ -14,6 +14,12 @@ if match flatpak install flathub com.visualstudio.code ; then
     exit 0
 fi
 
+if match podman inspect toolbox-vscode-test \
+         --format='{{ range .Config.Env }}{{ . }}{{"\n"}}{{ end }}' ; then
+    echo "NAME=fedora-toolbox"
+    echo "HOME=/root"
+fi
+
 if match flatpak ps --columns=instance,application ; then
     exit 0
 fi
