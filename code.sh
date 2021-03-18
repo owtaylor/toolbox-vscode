@@ -58,6 +58,13 @@ path_remove() {
     IFS=$saveIFS
 }
 
+# We'll later read the symlink to find podman-host.sh
+
+if [ ! -L "$0" ] ; then
+    echo "$(basename "$0"): Only symlinked installation currently supported" 1>&2
+    exit 1
+fi
+
 ### Argument parsing
 
 args=("$@")
@@ -223,18 +230,22 @@ fi
 
 ### Make sure that we have a podman wrapper configured
 
-podman_wrapper="$HOME/.local/bin/podman-host"
-if [ ! -f "$podman_wrapper" ] ; then
-    info "Creating wrapper script: $podman_wrapper"
+code_sh="$(readlink "$0")"
+podman_host_sh="$(dirname "$code_sh")/podman-host.sh"
 
-    cat > "$podman_wrapper" <<'EOF'
-#!/bin/bash
-exec flatpak-spawn --host podman "$@"
-EOF
+podman_wrapper="$HOME/.local/bin/podman-host"
+if [ "$(readlink "$podman_wrapper")" != "$podman_host_sh" ] ; then
+    info "Making $podman_wrapper a link to podman-host.sh"
+    ln -sf "$podman_host_sh" "$podman_wrapper"
 fi
-    chmod a+x "$podman_wrapper"
+
 
 settings_json="$HOME/.var/app/com.visualstudio.code/config/Code/User/settings.json"
+
+# Here's where we edit a JSON file with grep and sed...
+
+# Quote regular expression characters - a " in the path would still mess us up
+wrapper_quoted="$(echo "$podman_wrapper" |  sed -r 's@([$.*[\\^])@\\\1@g')"
 
 if [ ! -f "$settings_json" ] ; then
     info "Creating $settings_json"
@@ -245,10 +256,16 @@ if [ ! -f "$settings_json" ] ; then
   "remote.containers.dockerPath": "$podman_wrapper"
 }
 EOF
-elif ! grep -q remote.containers.dockerPath "$settings_json" ; then
-    # Assume that if remote.containers.dockerPath is set, its set to something that works
-    info "Editing $settings_json to set remote.containers.dockerPath"
-    sed -i '1s@{@{\n  "remote.containers.dockerPath": "'"$podman_wrapper"'",@' "$settings_json"
+elif ! grep -q '"remote\.containers\.dockerPath": *"'"$wrapper_quoted"'"' "$settings_json" ; then
+    if ! grep -q '"remote\.containers\.dockerPath"' "$settings_json" ; then
+        info "Editing $settings_json to add remote.containers.dockerPath"
+        sed -i '1s@{@{\n    "remote.containers.dockerPath": "'"$podman_wrapper"'",@' \
+            "$settings_json"
+    else
+        info "Editing $settings_json to update remote.containers.dockerPath"
+        sed -i -r 's@("remote.containers.dockerPath": *")[^"]*@\1'"$podman_wrapper"'@' \
+            "$settings_json"
+    fi
 fi
 
 ### Make sure that we have a writeable-by-user /root/.vscode-server directory
@@ -286,12 +303,8 @@ if $toolbox_reset_configuration || [ ! -f "$name_config" ] ; then
     "COLORTERM": "\${localEnv:COLORTERM}",
     "DBUS_SESSION_BUS_ADDRESS": "\${localEnv:DBUS_SESSION_BUS_ADDRESS}",
     "DESKTOP_SESSION": "\${localEnv:DESKTOP_SESSION}",
-    // This is whatever it was when the config was created
-    "DISPLAY": "$DISPLAY",
     "LANG": "\${localEnv:LANG}",
     "PATH": "$PATH",
-    "SHELL": "$SHELL",
-    "SSH_AUTH_SOCK": "$SSH_AUTH_SOCK",
     "TERM": "\${localEnv:TERM}",
     "XDG_CURRENT_DESKTOP": "\${localEnv:XDG_CURRENT_DESKTOP}",
     "XDG_DATA_DIRS": "\${localEnv:XDG_DATA_DIRS}",
