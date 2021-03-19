@@ -51,6 +51,6 @@ EOF
         fail "podman-host exited unsuccessfully"
 
     assert_grep \
-        "podman exec -e DISPLAY= -e SHELL=/bin/bash -e SSH_AUTH_SOCK= test-toolbox-vscode env" \
+        "podman exec -e SHELL=/bin/bash test-toolbox-vscode env" \
         /logs/podman_host_exec.cmd
 }

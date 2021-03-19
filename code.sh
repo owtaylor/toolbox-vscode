@@ -329,7 +329,7 @@ fi
 global_storage="$HOME/.var/app/com.visualstudio.code/config/Code/User/globalStorage"
 name_config="$global_storage/ms-vscode-remote.remote-containers/nameConfigs/$container_name.json"
 if $toolbox_reset_configuration || [ ! -f "$name_config" ] ; then
-    # The reason for including $PATH in removeEnv is so that any path modifications
+    # The reason for including $PATH in remoteEnv is so that any path modifications
     # set up in ~/.bashrc / ~/.bash_profile are present in the environment where
     # vscode runs commands, not just in the interactive terminal. As a special case
     # we remove any Python virtualenv path, in case this script is being invoked
@@ -346,18 +346,7 @@ if $toolbox_reset_configuration || [ ! -f "$name_config" ] ; then
   // "name": "Toolbox $container_name",
   "remoteUser": "\${localEnv:USER}",
   "remoteEnv": {
-    "COLORTERM": "\${localEnv:COLORTERM}",
-    "DBUS_SESSION_BUS_ADDRESS": "\${localEnv:DBUS_SESSION_BUS_ADDRESS}",
-    "DESKTOP_SESSION": "\${localEnv:DESKTOP_SESSION}",
-    "LANG": "\${localEnv:LANG}",
-    "PATH": "$PATH",
-    "TERM": "\${localEnv:TERM}",
-    "XDG_CURRENT_DESKTOP": "\${localEnv:XDG_CURRENT_DESKTOP}",
-    "XDG_DATA_DIRS": "\${localEnv:XDG_DATA_DIRS}",
-    "XDG_MENU_PREFIX": "\${localEnv:XDG_MENU_PREFIX}",
-    "XDG_RUNTIME_DIR": "\${localEnv:XDG_RUNTIME_DIR}",
-    "XDG_SESSION_DESKTOP": "\${localEnv:XDG_SESSION_DESKTOP}",
-    "XDG_SESSION_TYPE": "\${localEnv:XDG_SESSION_TYPE}"
+    "PATH": "$PATH"
   }
 }
 EOF
