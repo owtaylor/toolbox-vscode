@@ -25,3 +25,14 @@ jobs:
         run: |
             cd $GITHUB_WORKSPACE
             ./shellcheck.sh
+
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run tests
+        run: |
+            cd $GITHUB_WORKSPACE
+            ./run-tests.sh
