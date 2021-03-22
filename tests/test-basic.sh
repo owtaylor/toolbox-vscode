@@ -45,18 +45,7 @@ EOF
   // "name": "Toolbox toolbox-vscode-test",
   "remoteUser": "${localEnv:USER}",
   "remoteEnv": {
-    "COLORTERM": "${localEnv:COLORTERM}",
-    "DBUS_SESSION_BUS_ADDRESS": "${localEnv:DBUS_SESSION_BUS_ADDRESS}",
-    "DESKTOP_SESSION": "${localEnv:DESKTOP_SESSION}",
-    "LANG": "${localEnv:LANG}",
-    "PATH": "/home/testuser/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-    "TERM": "${localEnv:TERM}",
-    "XDG_CURRENT_DESKTOP": "${localEnv:XDG_CURRENT_DESKTOP}",
-    "XDG_DATA_DIRS": "${localEnv:XDG_DATA_DIRS}",
-    "XDG_MENU_PREFIX": "${localEnv:XDG_MENU_PREFIX}",
-    "XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}",
-    "XDG_SESSION_DESKTOP": "${localEnv:XDG_SESSION_DESKTOP}",
-    "XDG_SESSION_TYPE": "${localEnv:XDG_SESSION_TYPE}"
+    "PATH": "/home/testuser/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
   }
 }
 EOF

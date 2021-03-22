@@ -38,4 +38,4 @@ fi
 . /source/tests/default-mock.sh
 
 echo "$0: unmatched: $*" 1>&2
-exit
+exit 1
