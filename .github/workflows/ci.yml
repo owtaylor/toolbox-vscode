@@ -24,4 +24,4 @@ jobs:
       - name: Check scripts
         run: |
             cd $GITHUB_WORKSPACE
-            shellcheck *.sh
+            ./shellcheck.sh
