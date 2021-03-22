@@ -18,6 +18,7 @@ if match podman inspect toolbox-vscode-test \
          --format='{{ range .Config.Env }}{{ . }}{{"\n"}}{{ end }}' ; then
     echo "NAME=fedora-toolbox"
     echo "HOME=/root"
+    exit 0
 fi
 
 if match flatpak ps --columns=instance,application ; then
