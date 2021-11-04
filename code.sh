@@ -58,6 +58,18 @@ path_remove() {
     IFS=$saveIFS
 }
 
+read_cmdline() {
+    # read the command line of $2 into the array variable $1
+    local PROC=${TOOLBOX_VSCODE_FAKE_PROC:-/proc}
+    local -n var=$1
+    [ -e "$PROC/$2/cmdline" ] || return 1
+
+    while read -r -d '' arg ; do
+        var+=("$arg")
+    done < "$PROC/$2/cmdline"
+    return 0
+}
+
 # We'll later read the symlink to find podman-host.sh
 
 if [ ! -L "$0" ] ; then
@@ -382,18 +394,36 @@ if $toolbox_reset_configuration || [ ! -f $settings ] ; then
 EOF
 fi
 
-# Different invocations of the Flatpak have separate $XDG_DATA_DIR;
-# to actually open a window in the existing process requires
-# hackery.
-
-# https://github.com/flathub/com.visualstudio.code/issues/210
+# If there is already a Visual Studio code process running, we want
+# to open a window in that. Before Flatpak 1.11 different invocations
+# of the Flatpak had a separate $XDG_DATA_DIR so the communication
+# socket wasn't shared. We work around this by trying to find an
+# existing Flatpak instance and executing vscode in there, so it
+# will talk over the communication socket and exit. The zypak
+# wrapper makes this complicated in various ways.
+#
+# This complex solution isn't really necessary for 1.11 and newer,
+# but does make it about a second faster to put up a new window.
+# If it turns out to be unreliable we'll just drop this and always
+# use flatpak-run.
+#
+# See https://github.com/flathub/com.visualstudio.code/issues/210
 
 verbose "Checking for running Visual Studio Code Flatpak"
-existing=$($flatpak ps --columns=instance,application | sort -nr | \
-    while read -r instance application  ; do
-        if [ "$application" == "com.visualstudio.code" ] ; then
-            echo "$instance"
-            break
+existing=$($flatpak ps --columns=instance,application,pid | sort -nr | \
+    # We need to find the "host" zypak process, not the client one
+    # that is used to spawn sandboxes
+    while read -r instance application pid ; do
+        if [[ $application == "com.visualstudio.code" ]] ; then
+            cmd=()
+            if read_cmdline cmd "$pid" ; then
+                if [[ ${cmd[0]} = bwrap && \
+                    ${cmd[3]} = /app/bin/zypak-helper &&
+                    ${cmd[4]} = host ]]  ; then
+                    echo "$instance"
+                    break
+                fi
+            fi
         fi
     done)
 
@@ -404,14 +434,28 @@ if [ "$existing" = "" ] ; then
              --remote attached-container+"$container_name_encoded" "${new_args[@]}"
 else
     verbose "Found running Visual Studio Code Flatpak, will use 'flatpak enter'"
+    # flatpak enter tries to read the environment from the running process,
+    # which doesn't work with the zypak wrapper, so we need to set up a basic
+    # environment ourselves.
     # shellcheck disable=SC1004,SC2016
     script='
         cd $0
-        DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$UID/bus \
-        DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket \
+        HOME=$1
+        shift
+        DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$UID/bus
+        DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
+        XDG_DATA_HOME="$HOME/.var/app/com.visualstudio.code/data"
+        XDG_CONFIG_HOME="$HOME/.var/app/com.visualstudio.code/config"
+        XDG_CACHE_HOME="$HOME/.var/app/com.visualstudio.code/cache"
+        export HOME DBUS_SESSION_BUS_ADDRESS DBUS_SYSTEM_BUS_ADDRESS \
+            XDG_CACHE_HOME XDG_CONFIG_HOME XDG_DATA_HOME
+        ELECTRON_RUN_AS_NODE=1 \
+        PATH="${PATH}:$XDG_CONFIG_HOME/node_modules/bin" \
             exec "$@"
     '
     $verbose && set -x
-    $flatpak enter "$existing" sh -c "$script" "$PWD" code \
+    $flatpak enter "$existing" sh -c "$script" "$PWD" "$HOME" \
+            /app/extra/vscode/code /app/extra/vscode/resources/app/out/cli.js \
+            --extensions-dir="$HOME/.var/app/com.visualstudio.code/data/vscode/extensions" \
              --remote attached-container+"$container_name_encoded" "${new_args[@]}"
 fi
