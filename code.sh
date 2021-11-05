@@ -70,10 +70,16 @@ read_cmdline() {
     return 0
 }
 
-# We'll later read the symlink to find podman-host.sh
-
 if [ ! -L "$0" ] ; then
     echo "$(basename "$0"): Only symlinked installation currently supported" 1>&2
+    exit 1
+fi
+
+code_sh="$(readlink "$0")"
+podman_host_sh="$(dirname "$code_sh")/podman-host.sh"
+
+if [ ! -f "$podman_host_sh" ] ; then
+    echo "$(basename "$0"): $0 should be a symlink to code.sh in the toolbox-vscode checkout" 1>&2
     exit 1
 fi
 
@@ -241,9 +247,6 @@ else
 fi
 
 ### Make sure that we have a podman wrapper configured
-
-code_sh="$(readlink "$0")"
-podman_host_sh="$(dirname "$code_sh")/podman-host.sh"
 
 podman_wrapper="$HOME/.local/bin/podman-host"
 if [ "$(readlink "$podman_wrapper")" != "$podman_host_sh" ] ; then
