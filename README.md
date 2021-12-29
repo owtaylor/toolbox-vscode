@@ -5,7 +5,7 @@ This repository is intended for scripts and hooks to integrate [Toolbox](https:/
 
 In particular, it provides a `code.sh` script that:
  * If necessary, prompts to install the Flatpak of Visual Studio Code
- * If necessary, configures the current toolbox container to work with the [Remote Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote) Visual Studio Code extension.
+ * If necessary, configures the current toolbox container to work with the [Remote Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) Visual Studio Code extension.
  * Opens a VSCode window using the remaining command line arguments
 
 Installation
