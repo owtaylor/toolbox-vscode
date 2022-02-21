@@ -216,6 +216,11 @@ if $add_new_window ; then
     new_args+=("--new-window")
 fi
 
+# If we're not running inside toolbox, default to normal 'code' binary
+if [ ! -f /run/.containerenv ] ; then
+    exec flatpak run --command=code com.visualstudio.code "$@"
+fi
+
 flatpak="flatpak-spawn --host flatpak"
 # shellcheck disable=SC1091,SC2154
 container_name="$(. /run/.containerenv && echo "$name")"
