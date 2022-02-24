@@ -298,7 +298,7 @@ fi
 # different toolboxes step on each other.
 
 homevar="$(flatpak-spawn --host podman inspect "$container_name" \
-    --format='{{ range .Config.Env }}{{ . }}{{"\n"}}{{ end }}' \
+    --format='{{ range .Config.Env }}{{ println . }}{{ end }}' \
     | grep ^HOME=)"
 homevar="${homevar#HOME=}"
 
