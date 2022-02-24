@@ -11,7 +11,7 @@ test_basic() {
 
     assert_contents /logs/basic.cmd <<'EOF'
 flatpak list --app --columns=application
-podman inspect toolbox-vscode-test --format={{ range .Config.Env }}{{ . }}{{"\n"}}{{ end }}
+podman inspect toolbox-vscode-test --format={{ range .Config.Env }}{{ println . }}{{ end }}
 flatpak ps --columns=instance,application,pid
 flatpak run com.visualstudio.code --remote attached-container+746f6f6c626f782d7673636f64652d74657374 /home/testuser/project
 EOF
@@ -66,7 +66,7 @@ test_installation() {
 flatpak list --app --columns=application
 flatpak remotes --columns=name
 flatpak install flathub com.visualstudio.code
-podman inspect toolbox-vscode-test --format={{ range .Config.Env }}{{ . }}{{"\n"}}{{ end }}
+podman inspect toolbox-vscode-test --format={{ range .Config.Env }}{{ println . }}{{ end }}
 flatpak ps --columns=instance,application,pid
 flatpak run com.visualstudio.code --remote attached-container+746f6f6c626f782d7673636f64652d74657374 /home/testuser/project
 EOF
@@ -98,7 +98,7 @@ test_running() {
 
     assert_contents /logs/running.cmd <<'EOF'
 flatpak list --app --columns=application
-podman inspect toolbox-vscode-test --format={{ range .Config.Env }}{{ . }}{{"\n"}}{{ end }}
+podman inspect toolbox-vscode-test --format={{ range .Config.Env }}{{ println . }}{{ end }}
 flatpak ps --columns=instance,application,pid
 flatpak enter 123456 sh -c 
         cd $0
