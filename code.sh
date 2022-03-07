@@ -383,16 +383,21 @@ if $toolbox_reset_configuration || [ ! -f $settings ] ; then
 {
   "remote.containers.copyGitConfig": false,
   "remote.containers.gitCredentialHelperConfigLocation": "none",
-  "terminal.integrated.shell.linux": "/usr/sbin/capsh",
-  "terminal.integrated.shellArgs.linux": [
-    "--caps=",
-    "--",
-    "-c",
-    "exec \"\$@\"",
-    "/bin/sh",
-    "$SHELL",
-    "-l"
-  ]
+  "terminal.integrated.defaultProfile.linux": "toolbox",
+  "terminal.integrated.profiles.linux": {
+    "toolbox": {
+      "path": "/usr/sbin/capsh",
+      "args": [
+        "--caps=",
+        "--",
+        "-c",
+        "exec \"\$@\"",
+        "/bin/sh",
+        "$SHELL",
+        "-l"
+      ]
+    }
+  }
 }
 EOF
 fi
