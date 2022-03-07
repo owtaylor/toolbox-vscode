@@ -14,6 +14,7 @@ Installation
 ```
 git clone https://github.com/owtaylor/toolbox-vscode.git
 cd toolbox-vscode
+[ -d ~/.local/bin ] || mkdir ~/.local/bin
 ln -s "$PWD/code.sh" ~/.local/bin/code
 ```
 
