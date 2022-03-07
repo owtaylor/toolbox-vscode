@@ -114,6 +114,6 @@ flatpak enter 123456 sh -c
         ELECTRON_RUN_AS_NODE=1 \
         PATH="${PATH}:$XDG_CONFIG_HOME/node_modules/bin" \
             exec "$@"
-     /home/testuser/project /home/testuser /app/extra/vscode/code /app/extra/vscode/resources/app/out/cli.js --extensions-dir=/home/testuser/.var/app/com.visualstudio.code/data/vscode/extensions --remote attached-container+746f6f6c626f782d7673636f64652d74657374 /home/testuser/project
+     /home/testuser/project /home/testuser /app/extra/vscode/code /app/extra/vscode/resources/app/out/cli.js --ms-enable-electron-run-as-node --extensions-dir=/home/testuser/.var/app/com.visualstudio.code/data/vscode/extensions --remote attached-container+746f6f6c626f782d7673636f64652d74657374 /home/testuser/project
 EOF
 }
