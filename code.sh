@@ -459,6 +459,7 @@ else
     $verbose && set -x
     $flatpak enter "$existing" sh -c "$script" "$PWD" "$HOME" \
             /app/extra/vscode/code /app/extra/vscode/resources/app/out/cli.js \
+             --ms-enable-electron-run-as-node \
             --extensions-dir="$HOME/.var/app/com.visualstudio.code/data/vscode/extensions" \
              --remote attached-container+"$container_name_encoded" "${new_args[@]}"
 fi
