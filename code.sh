@@ -104,6 +104,24 @@ copy_arg_with_parameter() {
         copy_arg
     fi
 }
+add_file_or_folder_arg() {
+    # For remote files, vscode uses patterns based on the filename. (Trailing slash: folder,
+    # contains a dot: file). To emulate the more accurate handling in the local case,
+    # check the file type and pass in in --file-uri or --folder-uri.
+    # See doResolveFilePath(), doResolvePathRemote() in:
+    # https://github.com/microsoft/vscode/blob/main/src/vs/platform/windows/electron-main/windowsMainService.ts
+    # vscode accepts URIs with non-ascii in them, so we only need to escape a few things (%#?)
+
+    escaped=$(sed 's/%/@TVSC_PERCENT@/g; s/#/%23/g; s/\?/%3F/g; s/@TVSC_PERCENT@/%25/g' <<<"$1")
+    # Don't have the container name yet, will substitute that in later
+    uri=vscode-remote://@TVSC_AUTHORITY@$escaped
+
+    if [ -d "$1" ] ; then
+        new_args+=(--folder-uri "$uri")
+    else
+        new_args+=(--file-uri "$uri")
+    fi
+}
 
 toolbox_reset_configuration=false
 # Because 'code' without any arguments opens the last workspace in the
@@ -195,18 +213,19 @@ while [ "$arg_index" -lt "${#args[@]}" ] ; do
         # absolute_paths
         /*)
             add_new_window=false
-            copy_arg
+            add_file_or_folder_arg "$arg"
+            next_arg
             ;;
         # Special case relative path .
         .)
             add_new_window=false
-            new_args+=("$PWD")
+            add_file_or_folder_arg "$PWD"
             next_arg
             ;;
         # Other relative paths
         *)
             add_new_window=false
-            new_args+=("$PWD/$arg")
+            add_file_or_folder_arg "$PWD/$arg"
             next_arg
             ;;
     esac
@@ -220,6 +239,12 @@ flatpak="flatpak-spawn --host flatpak"
 # shellcheck disable=SC1091,SC2154
 container_name="$(. /run/.containerenv && echo "$name")"
 container_name_encoded=$(echo -n "$container_name" | od -t x1 -A none -v | tr -d ' \n')
+
+### Go back and fix up the arguments to have the container name in them, if needed
+
+for (( i=0; i < ${#new_args[@]}; i++ )) ; do
+    new_args[$i]=${new_args[$i]/@TVSC_AUTHORITY@/attached-container+$container_name_encoded}
+done
 
 ### Make sure that we have the Visual Studio Code Flatpak installed
 
