@@ -105,6 +105,44 @@ copy_arg_with_parameter() {
     fi
 }
 
+### Figure out which container we're in
+
+# shellcheck disable=SC1091,SC2154
+container_name="$(test -e /run/.containerenv && . /run/.containerenv && echo "$name")"
+container_name_encoded=$(echo -n "$container_name" | od -t x1 -A none -v | tr -d ' \n')
+[ -z "$container_name" ] && flatpak="flatpak" || flatpak="flatpak-spawn --host flatpak"
+
+### Make sure that we have the Visual Studio Code Flatpak installed
+
+verbose "Checking if Visual Studio Code Flatpak is installed"
+
+if $flatpak list --app --columns=application | grep -q com.visualstudio.code ; then
+    verbose "Visual Studio Code Flatpak is installed"
+else
+    read -r -p "Visual Studio Code Flatpak is not installed. Install? (y/N) " install
+    case "$install" in
+        y|Y)
+            if ! $flatpak remotes --columns=name | grep -q '^flathub$' ; then
+                echo "No flathub remote to install from, see https://flathub.org/" 1>&2
+                exit 1
+            fi
+            if ! $flatpak install flathub com.visualstudio.code; then
+                echo "Installation failed" 1>&2
+                exit 1
+            fi
+            ;;
+        *)
+            exit 1
+            ;;
+    esac
+fi
+
+if [ -z "$container_name" ]; then
+    verbose "Runnng Visual Studio Code outside of a container"
+    flatpak run com.visualstudio.code "$@"
+    exit $?
+fi
+
 toolbox_reset_configuration=false
 # Because 'code' without any arguments opens the last workspace in the
 # history, ignoring history, we add --new-window if there are no
@@ -214,36 +252,6 @@ done
 
 if $add_new_window ; then
     new_args+=("--new-window")
-fi
-
-flatpak="flatpak-spawn --host flatpak"
-# shellcheck disable=SC1091,SC2154
-container_name="$(. /run/.containerenv && echo "$name")"
-container_name_encoded=$(echo -n "$container_name" | od -t x1 -A none -v | tr -d ' \n')
-
-### Make sure that we have the Visual Studio Code Flatpak installed
-
-verbose "Checking if Visual Studio Code Flatpak is installed"
-
-if $flatpak list --app --columns=application | grep -q com.visualstudio.code ; then
-    verbose "Visual Studio Code Flatpak is installed"
-else
-    read -r -p "Visual Studio Code Flatpak is not installed. Install? (y/N) " install
-    case "$install" in
-        y|Y)
-            if ! $flatpak remotes --columns=name | grep -q '^flathub$' ; then
-                echo "No flathub remote to install from, see https://flathub.org/" 1>&2
-                exit 1
-            fi
-            if ! $flatpak install flathub com.visualstudio.code; then
-                echo "Installation failed" 1>&2
-                exit 1
-            fi
-            ;;
-        *)
-            exit 1
-            ;;
-    esac
 fi
 
 ### Make sure that we have a podman wrapper configured
