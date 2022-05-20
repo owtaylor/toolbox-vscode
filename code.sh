@@ -87,7 +87,12 @@ fi
 
 args=("$@")
 arg_index=0
-new_args=()
+
+if [ -f "$HOME/.config/code-flags.conf" ]; then
+    mapfile -t new_args < "$HOME/.config/code-flags.conf"
+else
+    new_args=()
+fi
 
 next_arg() {
     arg_index=$((arg_index + 1))
@@ -118,6 +123,7 @@ verbose "Checking if Visual Studio Code Flatpak is installed"
 
 if $flatpak list --app --columns=application | grep -q com.visualstudio.code ; then
     verbose "Visual Studio Code Flatpak is installed"
+    flatpak_name="$($flatpak list --app --columns=application | grep com.visualstudio.code)"
 else
     read -r -p "Visual Studio Code Flatpak is not installed. Install? (y/N) " install
     case "$install" in
@@ -137,9 +143,22 @@ else
     esac
 fi
 
+case "$flatpak_name" in
+    com.visualstudio.code)
+        product_name="Code"
+        ;;
+    com.visualstudio.code.insiders)
+        product_name="Code - Insiders"
+        ;;
+    *)
+        echo "Uknown version of VSCode: $flatpak_name" 1>&2
+        exit 1
+        ;;
+esac
+
 if [ -z "$container_name" ]; then
-    verbose "Runnng Visual Studio Code outside of a container"
-    flatpak run com.visualstudio.code "$@"
+    verbose "Running Visual Studio Code outside of a container"
+    flatpak run "$flatpak_name" "${new_args[@]}" "$@"
     exit $?
 fi
 
@@ -263,7 +282,7 @@ if [ "$(readlink "$podman_wrapper")" != "$podman_host_sh" ] ; then
 fi
 
 
-settings_json="$HOME/.var/app/com.visualstudio.code/config/Code/User/settings.json"
+settings_json="$HOME/.var/app/$flatpak_name/config/$product_name/User/settings.json"
 
 # Here's where we edit a JSON file with grep and sed...
 
@@ -349,7 +368,7 @@ fi
 
 ### Make sure we have a visual-studio code configuration for this container
 
-global_storage="$HOME/.var/app/com.visualstudio.code/config/Code/User/globalStorage"
+global_storage="$HOME/.var/app/$flatpak_name/config/$product_name/User/globalStorage"
 name_config="$global_storage/ms-vscode-remote.remote-containers/nameConfigs/$container_name.json"
 if $toolbox_reset_configuration || [ ! -f "$name_config" ] ; then
     # The reason for including $PATH in remoteEnv is so that any path modifications
@@ -430,7 +449,7 @@ existing=$($flatpak ps --columns=instance,application,pid | sort -nr | \
     # We need to find the "host" zypak process, not the client one
     # that is used to spawn sandboxes
     while read -r instance application pid ; do
-        if [[ $application == "com.visualstudio.code" ]] ; then
+        if [[ $application == "$flatpak_name" ]]; then
             cmd=()
             if read_cmdline cmd "$pid" ; then
                 if [[ ${cmd[0]} = bwrap && \
@@ -446,7 +465,7 @@ existing=$($flatpak ps --columns=instance,application,pid | sort -nr | \
 if [ "$existing" = "" ] ; then
     verbose "No running Visual Studio Code Flatpak, will use 'flatpak run'"
     $verbose && set -x
-    $flatpak run com.visualstudio.code \
+    $flatpak run $flatpak_name \
              --remote attached-container+"$container_name_encoded" "${new_args[@]}"
 else
     verbose "Found running Visual Studio Code Flatpak, will use 'flatpak enter'"
@@ -460,9 +479,9 @@ else
         shift
         DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$UID/bus
         DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
-        XDG_DATA_HOME="$HOME/.var/app/com.visualstudio.code/data"
-        XDG_CONFIG_HOME="$HOME/.var/app/com.visualstudio.code/config"
-        XDG_CACHE_HOME="$HOME/.var/app/com.visualstudio.code/cache"
+        XDG_DATA_HOME="$HOME/.var/app/$flatpak_name/data"
+        XDG_CONFIG_HOME="$HOME/.var/app/$flatpak_name/config"
+        XDG_CACHE_HOME="$HOME/.var/app/$flatpak_name/cache"
         export HOME DBUS_SESSION_BUS_ADDRESS DBUS_SYSTEM_BUS_ADDRESS \
             XDG_CACHE_HOME XDG_CONFIG_HOME XDG_DATA_HOME
         ELECTRON_RUN_AS_NODE=1 \
@@ -473,6 +492,6 @@ else
     $flatpak enter "$existing" sh -c "$script" "$PWD" "$HOME" \
             /app/extra/vscode/code /app/extra/vscode/resources/app/out/cli.js \
              --ms-enable-electron-run-as-node \
-            --extensions-dir="$HOME/.var/app/com.visualstudio.code/data/vscode/extensions" \
+            --extensions-dir="$HOME/.var/app/$flatpak_name/data/vscode/extensions" \
              --remote attached-container+"$container_name_encoded" "${new_args[@]}"
 fi
