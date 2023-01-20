@@ -9,7 +9,7 @@ test_settings_edit_missing() {
 
     assert_contents /home/testuser/.var/app/com.visualstudio.code/config/Code/User/settings.json <<'EOF'
 {
-  "remote.containers.dockerPath": "/home/testuser/.local/bin/podman-host"
+  "dev.containers.dockerPath": "/home/testuser/.local/bin/podman-host"
 }
 EOF
 }
@@ -30,7 +30,7 @@ EOF
 
     assert_contents /home/testuser/.var/app/com.visualstudio.code/config/Code/User/settings.json <<'EOF'
 {
-    "remote.containers.dockerPath": "/home/testuser/.local/bin/podman-host",
+    "dev.containers.dockerPath": "/home/testuser/.local/bin/podman-host",
     "test": "blah"
 }
 EOF
@@ -44,7 +44,7 @@ test_settings_edit_change() {
     mkdir -p /home/testuser/.var/app/com.visualstudio.code/config/Code/User
     cat > /home/testuser/.var/app/com.visualstudio.code/config/Code/User/settings.json <<'EOF'
 {
-    "remote.containers.dockerPath": "/blah/bin/podman-host"
+    "dev.containers.dockerPath": "/blah/bin/podman-host"
 }
 EOF
 
@@ -52,7 +52,7 @@ EOF
 
     assert_contents /home/testuser/.var/app/com.visualstudio.code/config/Code/User/settings.json <<'EOF'
 {
-    "remote.containers.dockerPath": "/home/testuser/.local/bin/podman-host"
+    "dev.containers.dockerPath": "/home/testuser/.local/bin/podman-host"
 }
 EOF
 }

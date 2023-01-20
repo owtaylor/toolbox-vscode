@@ -18,14 +18,14 @@ EOF
 
     assert_contents /home/testuser/.var/app/com.visualstudio.code/config/Code/User/settings.json <<'EOF'
 {
-  "remote.containers.dockerPath": "/home/testuser/.local/bin/podman-host"
+  "dev.containers.dockerPath": "/home/testuser/.local/bin/podman-host"
 }
 EOF
 
     assert_contents /root/.vscode-server/data/Machine/settings.json <<'EOF'
 {
-  "remote.containers.copyGitConfig": false,
-  "remote.containers.gitCredentialHelperConfigLocation": "none",
+  "dev.containers.copyGitConfig": false,
+  "dev.containers.gitCredentialHelperConfigLocation": "none",
   "terminal.integrated.defaultProfile.linux": "toolbox",
   "terminal.integrated.profiles.linux": {
     "toolbox": {
