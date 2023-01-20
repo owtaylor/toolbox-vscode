@@ -268,17 +268,17 @@ if [ ! -f "$settings_json" ] ; then
     mkdir -p "$(dirname "$settings_json")"
     cat > "$settings_json" <<EOF
 {
-  "remote.containers.dockerPath": "$podman_wrapper"
+  "dev.containers.dockerPath": "$podman_wrapper"
 }
 EOF
-elif ! grep -q '"remote\.containers\.dockerPath": *"'"$wrapper_quoted"'"' "$settings_json" ; then
-    if ! grep -q '"remote\.containers\.dockerPath"' "$settings_json" ; then
-        info "Editing $settings_json to add remote.containers.dockerPath"
-        sed -i '1s@{@{\n    "remote.containers.dockerPath": "'"$podman_wrapper"'",@' \
+elif ! grep -q '"dev\.containers\.dockerPath": *"'"$wrapper_quoted"'"' "$settings_json" ; then
+    if ! grep -q '"dev\.containers\.dockerPath"' "$settings_json" ; then
+        info "Editing $settings_json to add dev.containers.dockerPath"
+        sed -i '1s@{@{\n    "dev.containers.dockerPath": "'"$podman_wrapper"'",@' \
             "$settings_json"
     else
-        info "Editing $settings_json to update remote.containers.dockerPath"
-        sed -i -r 's@("remote.containers.dockerPath": *")[^"]*@\1'"$podman_wrapper"'@' \
+        info "Editing $settings_json to update dev.containers.dockerPath"
+        sed -i -r 's@("dev.containers.dockerPath": *")[^"]*@\1'"$podman_wrapper"'@' \
             "$settings_json"
     fi
 fi
@@ -381,8 +381,8 @@ if $toolbox_reset_configuration || [ ! -f $settings ] ; then
     mkdir -p "$(dirname $settings)"
     cat > $settings <<EOF
 {
-  "remote.containers.copyGitConfig": false,
-  "remote.containers.gitCredentialHelperConfigLocation": "none",
+  "dev.containers.copyGitConfig": false,
+  "dev.containers.gitCredentialHelperConfigLocation": "none",
   "terminal.integrated.defaultProfile.linux": "toolbox",
   "terminal.integrated.profiles.linux": {
     "toolbox": {

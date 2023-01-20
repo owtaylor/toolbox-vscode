@@ -22,7 +22,7 @@ mock_server_dir_topdir() {
 
 test_server_dir_topdir() {
     code .
-    assert_grep '"remote.containers.copyGitConfig": false' \
+    assert_grep '"dev.containers.copyGitConfig": false' \
                 /.vscode-server/data/Machine/settings.json
 }
 
@@ -34,7 +34,7 @@ mock_server_dir_root() {
 
 test_server_dir_root() {
     code .
-    assert_grep '"remote.containers.copyGitConfig": false' \
+    assert_grep '"dev.containers.copyGitConfig": false' \
                 /root/.vscode-server/data/Machine/settings.json
 }
 
@@ -54,7 +54,7 @@ mock_server_dir_home() {
 test_server_dir_home() {
     code .
     check_home_symlink
-    assert_grep '"remote.containers.copyGitConfig": false' \
+    assert_grep '"dev.containers.copyGitConfig": false' \
                 /home/testuser/.vscode-server/data/Machine/settings.json
 }
 
@@ -68,7 +68,7 @@ test_server_dir_home_old_symlink() {
     ln -s /bah/bah /home/testuser/.vscode-server
     code .
     check_home_symlink
-    assert_grep '"remote.containers.copyGitConfig": false' \
+    assert_grep '"dev.containers.copyGitConfig": false' \
                 /home/testuser/.vscode-server/data/Machine/settings.json
 }
 
