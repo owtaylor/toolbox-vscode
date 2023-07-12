@@ -438,8 +438,14 @@ existing=$($flatpak ps --columns=instance,application,pid | sort -nr | \
 if [ "$existing" = "" ] ; then
     verbose "No running Visual Studio Code Flatpak, will use 'flatpak run'"
     $verbose && set -x
-    $flatpak run com.visualstudio.code \
-             --remote attached-container+"$container_name_encoded" "${new_args[@]}"
+    if [[ $XDG_SESSION_TYPE == "wayland" ]]; then
+       $flatpak run --socket=wayland com.visualstudio.code \
+                --remote attached-container+"$container_name_encoded" "${new_args[@]}" \
+                --ozone-platform-hint=wayland
+    else
+       $flatpak run com.visualstudio.code \
+                --remote attached-container+"$container_name_encoded" "${new_args[@]}"
+    fi
 else
     verbose "Found running Visual Studio Code Flatpak, will use 'flatpak enter'"
     # flatpak enter tries to read the environment from the running process,
