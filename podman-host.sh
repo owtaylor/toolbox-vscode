@@ -28,7 +28,7 @@ if [ "$1" == "exec" ] ; then
         done
         exec podman exec "${envargs[@]}" "$@"
     '
-    exec flatpak-spawn --host sh -c "$script" - "$@"
+    exec flatpak-spawn --host bash -c "$script" - "$@"
 else
     exec flatpak-spawn --host podman "$@"
 fi
