@@ -9,11 +9,12 @@ test_basic() {
     cd ~/project || exit 1
     code --toolbox-verbose .
 
-    assert_contents /logs/basic.cmd <<'EOF'
+    AUTHORITY=attached-container+746f6f6c626f782d7673636f64652d74657374
+    assert_contents /logs/basic.cmd <<EOF
 flatpak list --app --columns=application
 podman inspect toolbox-vscode-test --format={{ range .Config.Env }}{{ println . }}{{ end }}
 flatpak ps --columns=instance,application,pid
-flatpak run com.visualstudio.code --remote attached-container+746f6f6c626f782d7673636f64652d74657374 /home/testuser/project
+flatpak run com.visualstudio.code --remote $AUTHORITY --folder-uri vscode-remote://$AUTHORITY/home/testuser/project
 EOF
 
     assert_contents /home/testuser/.var/app/com.visualstudio.code/config/Code/User/settings.json <<'EOF'
@@ -67,13 +68,14 @@ test_installation() {
     cd ~/project || exit 1
     yes | code --toolbox-verbose .
 
-    assert_contents /logs/installation.cmd <<'EOF'
+    AUTHORITY=attached-container+746f6f6c626f782d7673636f64652d74657374
+    assert_contents /logs/installation.cmd <<EOF
 flatpak list --app --columns=application
 flatpak remotes --columns=name
 flatpak install flathub com.visualstudio.code
 podman inspect toolbox-vscode-test --format={{ range .Config.Env }}{{ println . }}{{ end }}
 flatpak ps --columns=instance,application,pid
-flatpak run com.visualstudio.code --remote attached-container+746f6f6c626f782d7673636f64652d74657374 /home/testuser/project
+flatpak run com.visualstudio.code --remote $AUTHORITY --folder-uri vscode-remote://$AUTHORITY/home/testuser/project
 EOF
 }
 
@@ -119,6 +121,6 @@ flatpak enter 123456 sh -c
         ELECTRON_RUN_AS_NODE=1 \
         PATH="${PATH}:$XDG_CONFIG_HOME/node_modules/bin" \
             exec "$@"
-     /home/testuser/project /home/testuser /app/extra/vscode/code /app/extra/vscode/resources/app/out/cli.js --ms-enable-electron-run-as-node --extensions-dir=/home/testuser/.var/app/com.visualstudio.code/data/vscode/extensions --remote attached-container+746f6f6c626f782d7673636f64652d74657374 /home/testuser/project
+     /home/testuser/project /home/testuser /app/extra/vscode/code /app/extra/vscode/resources/app/out/cli.js --ms-enable-electron-run-as-node --extensions-dir=/home/testuser/.var/app/com.visualstudio.code/data/vscode/extensions --remote attached-container+746f6f6c626f782d7673636f64652d74657374 --folder-uri vscode-remote://attached-container+746f6f6c626f782d7673636f64652d74657374/home/testuser/project
 EOF
 }
