@@ -18,6 +18,12 @@ cd toolbox-vscode
 ln -s "$PWD/code.sh" ~/.local/bin/code
 ```
 
+Optionally, to set up a desktop entry
+
+```
+ln -s "$PWD/code.desktop" ~/.local/share/applications/code.desktop
+```
+
 Usage
 -----
 
